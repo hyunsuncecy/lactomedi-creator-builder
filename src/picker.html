@@ -1,0 +1,16 @@
+<div class="modal mpModal" id="mediaPicker" role="dialog" aria-modal="true" aria-label="Choose a photo, GIF or video">
+  <div class="card mpCard" id="mpCard">
+    <div class="mpHead"><strong>Choose a reference</strong><button type="button" class="icon" id="mpClose">Close</button></div>
+    <div class="mpUpload">
+      <button type="button" class="primary mpUp" id="mpUploadBtn">Upload from this device</button>
+      <span class="hint">Or drop a file here. Anything you upload is added to the team library.</span>
+    </div>
+    <div class="mpTools">
+      <div class="mpFilters"><button type="button" data-mpf="all">All</button><button type="button" data-mpf="photo">Photos</button><button type="button" data-mpf="gif">GIFs</button><button type="button" data-mpf="video">Videos</button></div>
+      <input type="text" id="mpSearch" placeholder="Search by file name or who uploaded it" aria-label="Search the team library">
+    </div>
+    <div class="mpGrid" id="mpGrid"></div>
+  </div>
+</div>
+<input type="file" id="mpFile" hidden>
+<div class="mpToast" id="mpToast" role="status" aria-live="polite"></div>

@@ -1,0 +1,23 @@
+.mpModal .mpCard{max-width:760px!important;width:100%;text-align:left!important;max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);display:flex;flex-direction:column;overflow:hidden;padding:18px!important}
+.mpCard.drop{outline:3px dashed var(--focus);outline-offset:-8px}
+.mpHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:17px}
+.mpUpload{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;border:1px dashed var(--line);border-radius:12px;margin-bottom:12px}
+.mpUpload .hint{margin:0}
+.primary.mpUp{width:auto;padding:10px 16px;font-size:14px}
+.mpTools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.mpFilters{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mpFilters button{border:0;border-radius:0;padding:7px 12px;font-size:13px;color:var(--muted);background:var(--panel)}
+.mpFilters button.on{background:var(--btn);color:var(--btnInk)}
+#mpSearch{flex:1;min-width:180px}
+.mpGrid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;padding:2px 2px 4px;min-height:120px}
+.mpItem{display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:12px;text-align:left;background:var(--panel)}
+.mpItem.busy{opacity:.5}
+.mpThumb{position:relative;display:block;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:var(--soft)}
+.mpThumb img,.mpThumb video{width:100%;height:100%;object-fit:cover;display:block}
+.mpKind{position:absolute;left:5px;bottom:5px;background:rgba(0,0,0,.72);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px}
+.mpName{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mpMeta{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mpEmpty{grid-column:1/-1;color:var(--muted);font-size:14px;margin:20px 0}
+.mpToast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--btn);color:var(--btnInk);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100% - 32px)}
+.mpToast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.mpThumb img{margin:0!important;border-radius:0!important}
