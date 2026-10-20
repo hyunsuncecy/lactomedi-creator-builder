@@ -1,4 +1,18 @@
-# Lactomedi Creator Builders: Railway setup
+# Lactomedi Creator Builders v2.1: Railway setup
+
+## What's new in v2.1
+
+- **Move and zoom pictures:** drag any picture in the preview to reposition it inside its frame, and zoom with the slider or the scroll wheel. Each picture keeps its position in saved scripts and downloads.
+- **Download as PDF:** the Content Guide Builder saves a one-page PDF. The Content Script Builder saves one PDF with all four pages, or a single page.
+
+## Updating from v2.0
+
+Only these files changed: `public/index.html`, `public/guide.html`, `public/script.html`, `package.json` and `README.md`.
+
+1. In GitHub Desktop, replace those files in your repository folder with the ones from this zip.
+2. Click **Commit to main**, then **Push origin**.
+3. Railway rebuilds the site in about 2 minutes. Saved scripts and the media library are not affected.
+
 
 One link for the team with three pages:
 

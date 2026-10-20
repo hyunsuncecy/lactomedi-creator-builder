@@ -139,6 +139,15 @@ canvas#out{width:100%;height:auto;display:block;border-radius:8px;box-shadow:0 1
 .libRow button{padding:6px 12px;font-size:13px}
 .libRow button.danger{background:#B4474F;color:#fff;border-color:#B4474F}
 .backLink{display:inline-block;margin:0 0 10px;color:var(--muted);font-weight:600;font-size:14px;text-decoration:none}.backLink:hover{color:var(--ink)}
+.cropWrap{position:relative}
+.cropBox{position:absolute;pointer-events:none;border:2px solid #fff;border-radius:6px;box-shadow:0 0 0 2px rgba(0,0,0,.55),0 0 0 9999px rgba(0,0,0,.18)}
+.cropBox[hidden],.cropBar[hidden]{display:none}
+.cropBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.cropHint{font-size:13px;color:var(--muted);flex:1 1 100%}
+.cropZoom{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;font-weight:600;color:var(--ink);flex:1}
+.cropZoom input{flex:1;accent-color:var(--focus)}
+.cropBar button{padding:6px 12px;font-size:13px}
+.cropWrap{overflow:hidden;border-radius:8px}
 .mpModal .mpCard{max-width:760px!important;width:100%;text-align:left!important;max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);display:flex;flex-direction:column;overflow:hidden;padding:18px!important}
 .mpCard.drop{outline:3px dashed var(--focus);outline-offset:-8px}
 .mpHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:17px}
@@ -303,7 +312,7 @@ canvas#out{width:100%;height:auto;display:block;border-radius:8px;box-shadow:0 1
       <div class="field" style="margin:14px 0 10px"><label for="fileName">File name</label>
         <div class="row" style="flex-wrap:nowrap"><input type="text" id="fileName"><span class="hint" id="ext" style="margin:0;white-space:nowrap">-p1.png</span></div></div>
       <div class="field" style="margin:0 0 12px"><label>Download as</label>
-        <div class="seg"><button type="button" data-fmt="png">PNG images</button><button type="button" data-fmt="gif">Animated GIFs</button></div>
+        <div class="seg"><button type="button" data-fmt="png">PNG images</button><button type="button" data-fmt="gif">Animated GIFs</button><button type="button" data-fmt="pdf">PDF</button></div>
         <p class="hint" id="fmtHint"></p></div>
       <button class="primary" id="download" type="button">Download all 4 pages</button>
       <div class="row" style="margin-top:8px">
@@ -827,6 +836,7 @@ const INK='#26222B', MUTED='#77707F', RED='#B4474F', P=60, CW=W-2*P;
 let A='#7A4E9E', Tn='#F3EDF8';
 
 function render(page){
+  HIT.length=0; if(window.__cropSync) window.__cropSync();
   page=page||PV;
   A=/^#[0-9a-f]{6}$/i.test(S.accent)?S.accent:'#7A4E9E';
   Tn=/^#[0-9a-f]{6}$/i.test(S.tint)?S.tint:'#F3EDF8';
@@ -885,8 +895,7 @@ function drawThumb(sl,tx,ty,tw,th,r){
   ctx.save(); rr(tx,ty,tw,th,r); ctx.clip();
   const im=sl?slotVisual(sl):null;
   if(im&&im.width){
-    const k=Math.max(tw/im.width,th/im.height), iw=im.width*k, ih=im.height*k;
-    ctx.drawImage(im,tx+(tw-iw)/2,ty+(th-ih)/2,iw,ih);
+    placeImage(sl,im,tx,ty,tw,th,'cover');
   } else {
     ctx.fillStyle=mix(A,0.82); ctx.fillRect(tx,ty,tw,th);
     ctx.fillStyle=A; let rs=Math.min(22,tw*0.14); ctx.font=F(600,rs); ctx.textAlign='center';
@@ -958,8 +967,8 @@ function productBody(k,y0,draw,th){
     const im=ph?slotVisual(ph):getImg(BANDS[presetId]);
     if(im&&im.width){
       // an uploaded product photo is shown whole; the default photo is cropped to fill
-      const kk=ph?Math.min(LW/im.width,photoH/im.height):Math.max(LW/im.width,photoH/im.height);
-      const iw=im.width*kk, ih=im.height*kk; ctx.drawImage(im,P+(LW-iw)/2,y0+(photoH-ih)/2,iw,ih);
+      if(ph) placeImage(ph,im,P,y0,LW,photoH,'contain');
+      else { const kk=Math.max(LW/im.width,photoH/im.height), iw=im.width*kk, ih=im.height*kk; ctx.drawImage(im,P+(LW-iw)/2,y0+(photoH-ih)/2,iw,ih); }
     } else { ctx.fillStyle=A; ctx.font=F(600,20); ctx.textAlign='center'; ctx.fillText('Product photo',P+LW/2,y0+photoH/2); ctx.textAlign='left'; }
     ctx.restore();
     if(badgeH){
@@ -1373,7 +1382,7 @@ if(window.claude&&typeof window.claude.use==='function'){
   window.claude.use('downloads').then(d=>{downloads=d;}).catch(()=>{});
 }
 function slug(t){return (t||'brief').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'brief';}
-let fmt=store.format==='gif'?'gif':'png';
+let fmt=(['png','gif','pdf'].includes(store.format)?store.format:'png');
 function extFor(p){ return fmt==='gif'&&liveAnims(p).length?'gif':'png'; }
 function updateFormatUI(){
   if(typeof fmt==='undefined') return;
@@ -1381,16 +1390,17 @@ function updateFormatUI(){
   document.querySelectorAll('[data-fmt]').forEach(b=>b.classList.toggle('on',b.dataset.fmt===fmt));
   document.querySelectorAll('[data-pv]').forEach(b=>b.classList.toggle('on',+b.dataset.pv===PV));
   syncTS();
-  $('ext').textContent=`-p1 to -p4`;
+  $('ext').textContent=fmt==='pdf'?'.pdf':`-p1 to -p4`;
   let h='';
   if(fmt==='gif'&&!anims) h=stillOnly()?'Videos and GIFs need to be re-uploaded after reopening this page to move again.':'Add a GIF or video as a reference to make a page move. Pages without one download as PNG.';
   else if(fmt==='gif') h='Pages with a video or GIF play up to 6 seconds on a loop, at 720 × 1280. Other pages download as PNG.';
+  else if(fmt==='pdf') h='All 4 pages in one PDF, easy to email or print.'+(anims?' Videos and GIFs show their first frame.':'');
   else if(anims) h='PNG uses the first frame of each video or GIF.';
   $('fmtHint').textContent=h;
 }
 document.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>{fmt=b.dataset.fmt; store.format=fmt; updateFormatUI(); persist();}));
 function fileName(p,ext){
-  const typed=(S.fileName||'').trim().replace(/\.(png|gif)$/i,'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim();
+  const typed=(S.fileName||'').trim().replace(/\.(png|gif|pdf)$/i,'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim();
   return (typed||`${slug(S.product)}-${S.type}-brief`)+`-p${p}.`+ext;
 }
 async function makeGif(page){
@@ -1447,6 +1457,15 @@ async function exportPages(pages){
   document.querySelectorAll('#download,[data-one]').forEach(b=>b.disabled=true);
   const toModal=[], saved=[];
   try{
+    if(fmt==='pdf'){
+      const imgs=[];
+      for(const p of pages){ status(`Making PDF… page ${p}`); T=0; render(p); imgs.push({jpg:await canvasJpeg(),w:cv.width,h:cv.height}); await nextTick(); }
+      const base=fileName(pages[0],'pdf').replace(/-p\d+\.pdf$/,'');
+      const f={blob:makePdf(imgs),name:pages.length===1?`${base}-p${pages[0]}.pdf`:`${base}.pdf`};
+      const r=await saveOne(f);
+      if(r==='saved') status('Saved '+f.name); else if(r==='modal') openPdf(f.blob); else if(r==='declined') status('Download cancelled.');
+      pages=[];
+    }
     for(const p of pages){
       const f=await makePage(p);
       if(!f.blob){status('Could not create the image. Try again.'); continue;}
@@ -1506,7 +1525,7 @@ function loadTab(t){
   if(typeof normalize==='function') Object.values(store.drafts).forEach(normalize);
   presetId=store.current in EXAMPLES?store.current:'icg';
   S=store.drafts[presetId]||fresh(presetId);
-  fmt=store.format==='gif'?'gif':'png';
+  fmt=(['png','gif','pdf'].includes(store.format)?store.format:'png');
   WS.loading=true; try{ REBUILD(); } finally { WS.loading=false; } renderTabs();
 }
 function switchTab(id){ if(id===WS.active) return; commitActive(); WS.active=id; loadTab(curTab()); saveWorkspace(); }
@@ -1759,6 +1778,105 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 document.querySelectorAll('[data-back]').forEach(a=>a.addEventListener('click',async e=>{
   e.preventDefault(); try{ await Promise.race([flushNow(),new Promise(r=>setTimeout(r,1500))]); }catch(err){} location.href='/';
 }));
+
+// ---------- move and zoom pictures inside their frames ----------
+// Drag a picture in the preview to reposition it; zoom with the slider (or the scroll wheel
+// while it's selected). Each picture remembers its own position, saved with the script.
+var HIT=[], CROP_SEL=null;
+window.__crop={get hits(){return HIT;},get sel(){return CROP_SEL;}};
+function imgSig(sl){ const s=String(sl&&sl.img||''); return s.length+':'+s.slice(-32); }
+function cropOf(sl){ const c=sl&&sl.imgCrop; return c&&c.sig===imgSig(sl)?c:null; }
+function placeImage(sl,im,x,y,w,h,fit){
+  const c=cropOf(sl), z=c?c.z:1;
+  const base=fit==='contain'?Math.min(w/im.width,h/im.height):Math.max(w/im.width,h/im.height);
+  const k=base*z, iw=im.width*k, ih=im.height*k;
+  const fx=c?c.fx:0.5, fy=c?c.fy:0.5;
+  ctx.drawImage(im,x+(w-iw)*fx,y+(h-ih)*fy,iw,ih);
+  if(sl) HIT.push({sl,x,y,w,h,iw,ih});
+}
+(function(){
+  const wrap=document.createElement('div'); wrap.className='cropWrap';
+  cv.parentNode.insertBefore(wrap,cv); wrap.appendChild(cv);
+  const box=document.createElement('div'); box.className='cropBox'; box.hidden=true; wrap.appendChild(box);
+  const bar=document.createElement('div'); bar.className='cropBar'; bar.hidden=true;
+  bar.innerHTML=`<span class="cropHint">Drag the picture to move it.</span>
+    <label class="cropZoom">Zoom <input type="range" min="1" max="3" step="0.01" value="1" aria-label="Zoom picture"></label>
+    <button type="button" class="cropReset">Reset</button><button type="button" class="cropDone">Done</button>`;
+  wrap.parentNode.insertBefore(bar,wrap.nextSibling);
+  const zoom=bar.querySelector('input');
+  const scale=()=>cv.width/cv.getBoundingClientRect().width;
+  const pt=e=>{const r=cv.getBoundingClientRect(), s=cv.width/r.width; return {x:(e.clientX-r.left)*s,y:(e.clientY-r.top)*s};};
+  const hitAt=p=>{ for(let i=HIT.length-1;i>=0;i--){const h=HIT[i]; if(p.x>=h.x&&p.x<=h.x+h.w&&p.y>=h.y&&p.y<=h.y+h.h) return h;} return null; };
+  const hitOf=sl=>HIT.find(h=>h.sl===sl)||null;
+  function ensure(sl){ let c=cropOf(sl); if(!c){ c={sig:imgSig(sl),fx:0.5,fy:0.5,z:1}; sl.imgCrop=c; } return c; }
+  function select(sl){ CROP_SEL=sl; cv.style.touchAction=sl?'none':''; syncUI(); }
+  function syncUI(){
+    const h=CROP_SEL&&hitOf(CROP_SEL);
+    if(!h){ box.hidden=true; bar.hidden=true; if(CROP_SEL&&!document.contains(cv)) CROP_SEL=null; return; }
+    const s=1/scale();
+    Object.assign(box.style,{left:h.x*s+'px',top:h.y*s+'px',width:h.w*s+'px',height:h.h*s+'px'});
+    box.hidden=false; bar.hidden=false;
+    const c=cropOf(CROP_SEL); zoom.value=c?c.z:1;
+  }
+  window.__cropSync=()=>requestAnimationFrame(syncUI);
+  let drag=null, rq=0;
+  const redraw=()=>{ cancelAnimationFrame(rq); rq=requestAnimationFrame(()=>{ render(); syncUI(); }); };
+  cv.addEventListener('pointerdown',e=>{
+    if(e.button>0) return;
+    render(); const h=hitAt(pt(e));
+    if(!h){ if(CROP_SEL){ select(null); } return; }
+    if(e.pointerType!=='mouse'&&CROP_SEL!==h.sl){ select(h.sl); return; } // on touch, the first tap selects
+    select(h.sl); e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    drag={id:e.pointerId,last:pt(e),moved:false};
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!drag){ cv.style.cursor=hitAt(pt(e))?'grab':''; return; }
+    if(e.pointerId!==drag.id) return;
+    const p=pt(e), dx=p.x-drag.last.x, dy=p.y-drag.last.y; drag.last=p;
+    const h=hitOf(CROP_SEL); if(!h) return;
+    const c=ensure(CROP_SEL);
+    if(Math.abs(h.w-h.iw)>0.5) c.fx=Math.min(1,Math.max(0,c.fx+dx/(h.w-h.iw)));
+    if(Math.abs(h.h-h.ih)>0.5) c.fy=Math.min(1,Math.max(0,c.fy+dy/(h.h-h.ih)));
+    drag.moved=true; cv.style.cursor='grabbing'; redraw();
+  });
+  const end=e=>{ if(!drag||e.pointerId!==drag.id) return; const m=drag.moved; drag=null; cv.style.cursor='grab'; if(m) changed(); };
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
+  cv.addEventListener('wheel',e=>{
+    if(!CROP_SEL) return; const h=hitAt(pt(e)); if(!h||h.sl!==CROP_SEL) return;
+    e.preventDefault(); const c=ensure(CROP_SEL);
+    c.z=Math.min(3,Math.max(1,c.z*(e.deltaY<0?1.06:1/1.06))); redraw(); clearTimeout(cv._wz); cv._wz=setTimeout(changed,300);
+  },{passive:false});
+  zoom.addEventListener('input',()=>{ if(!CROP_SEL) return; ensure(CROP_SEL).z=+zoom.value; redraw(); });
+  zoom.addEventListener('change',()=>changed());
+  bar.querySelector('.cropReset').addEventListener('click',()=>{ if(CROP_SEL){ delete CROP_SEL.imgCrop; changed(); redraw(); } });
+  bar.querySelector('.cropDone').addEventListener('click',()=>select(null));
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&CROP_SEL) select(null); });
+  window.addEventListener('resize',()=>{ if(CROP_SEL) syncUI(); });
+})();
+
+// ---------- PDF export: each 9:16 page becomes one PDF page ----------
+async function canvasJpeg(q){ const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',q||0.93)); return new Uint8Array(await b.arrayBuffer()); }
+function makePdf(pages){ // pages: [{jpg:Uint8Array,w,h}]
+  const enc=new TextEncoder(), parts=[], offs=[]; let len=0;
+  const add=x=>{ const b=typeof x==='string'?enc.encode(x):x; parts.push(b); len+=b.length; };
+  const obj=(n,body)=>{ offs[n]=len; add(`${n} 0 obj\n`); body(); add('\nendobj\n'); };
+  const PW=405, PH=720; // 5.625 × 10 inches, 9:16
+  const n=pages.length, kids=pages.map((_,i)=>`${3+i*3} 0 R`).join(' ');
+  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  obj(1,()=>add('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2,()=>add(`<< /Type /Pages /Kids [${kids}] /Count ${n} >>`));
+  pages.forEach((p,i)=>{
+    const pg=3+i*3, im=pg+1, ct=pg+2, draw=`q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+    obj(pg,()=>add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`));
+    obj(im,()=>{ add(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpg.length} >>\nstream\n`); add(p.jpg); add('\nendstream'); });
+    obj(ct,()=>add(`<< /Length ${draw.length} >>\nstream\n${draw}\nendstream`));
+  });
+  const total=3+n*3, xref=len;
+  let x=`xref\n0 ${total}\n0000000000 65535 f \n`; for(let k=1;k<total;k++) x+=String(offs[k]).padStart(10,'0')+' 00000 n \n';
+  add(x+`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+function openPdf(blob){ const u=URL.createObjectURL(blob); const w=window.open(u,'_blank'); if(!w){ const a=document.createElement('a'); a.href=u; a.target='_blank'; document.body.appendChild(a); a.click(); a.remove(); } }
 
 // ---------- start ----------
 fillTop(); buildAll(); render(); updateFormatUI();

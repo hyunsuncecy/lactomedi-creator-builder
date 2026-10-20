@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Creator Builders | Lactomedi</title>
+<title>Creator Builders v2.1 | Lactomedi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -72,6 +72,7 @@ h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.02em;font-
 .more[hidden]{display:none}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--btn);color:var(--btnInk);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 .toast.on{opacity:1}
+.ver{color:var(--muted);font-size:12.5px;margin:48px 0 0}
 </style>
 </head>
 <body>
@@ -86,7 +87,7 @@ h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.02em;font-
         <div class="name">Content Guide Builder</div>
         <p class="what">A one-page, shot-by-shot guide. Tells creators exactly what to say and do in each cut.</p>
         <ul class="inside">
-          <li>One 9:16 page, as a PNG or animated GIF</li>
+          <li>One 9:16 page, as a PNG, animated GIF or PDF</li>
           <li>Up to 6 scenes with script, action, on-screen text and timing</li>
           <li>Option A and Option B for any scene</li>
         </ul>
@@ -101,7 +102,7 @@ h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.02em;font-
         <ul class="inside">
           <li>Product, hook examples, what to show and posting guidelines</li>
           <li>Calm or Bold brief, each with its own examples</li>
-          <li>Download all four 9:16 pages at once</li>
+          <li>Download all four 9:16 pages as PNGs, GIFs or one PDF</li>
         </ul>
         <span class="go">Open builder</span><span class="last" data-last="script" hidden>Last used</span>
       </div>
@@ -129,6 +130,7 @@ h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.02em;font-
     <div class="grid" id="libGrid"><p class="empty">Loading the library…</p></div>
     <button type="button" class="more" id="libMore" hidden>Show more</button>
   </section>
+  <p class="ver">Version 2.1</p>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>

@@ -1,9 +1,13 @@
 {
   "name": "lactomedi-creator-builders",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Lactomedi Content Guide Builder and Content Script Builder, with shared team script and media libraries",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }
